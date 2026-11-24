@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "source": {
+    "title": "EMSD, District Cooling Services Charges (rates under the District Cooling Services Ordinance, Cap. 624)",
+    "url": "https://www.emsd.gov.hk/en/energy_efficiency/DCS_in_HK/charges/index.html",
+    "accessed": "2026-11-21",
+    "notes": "Capacity charge = contract capacity x capacity rate (per month). Consumption charge = metered cooling energy x consumption rate. Capacity rate adjusts with the Composite CPI; consumption rate adjusts with the electricity tariff. A capacity overrun is charged at 1.1 x the capacity rate on the excess (LegCo Panel on Environmental Affairs paper, 17 July 2014); this tool assumes no overrun."
+  },
+  "systems": [
+    {"id": "kai_tak", "name": "Kai Tak District Cooling System", "status": "In operation (phased since 29 Jan 2013)",
+     "rates": {"2025/26": {"capacity_hkd_per_kwr_month": 139.35, "consumption_hkd_per_kwhr": 0.2451},
+               "2026/27": {"capacity_hkd_per_kwr_month": 140.88, "consumption_hkd_per_kwhr": 0.2387}},
+     "service_area": {"file": "config/areas/kai_tak_ozp_S_K22_9_plan_scheme_area.json",
+                      "basis": "APPROXIMATION: Kai Tak OZP S/K22/9 planning scheme boundary. The DCS pipe network and plant locations are not in the supplied files; connection is only possible for buildings the network reaches."}},
+    {"id": "tung_chung_east", "name": "Tung Chung East District Cooling System", "status": "Under construction (EMSD); not in a configured district",
+     "rates": {"2025/26": {"capacity_hkd_per_kwr_month": 145.15, "consumption_hkd_per_kwhr": 0.2451},
+               "2026/27": {"capacity_hkd_per_kwr_month": 146.75, "consumption_hkd_per_kwhr": 0.2387}},
+     "service_area": null},
+    {"id": "kwu_tung_north", "name": "Kwu Tung North District Cooling System", "status": "Planned / under development; not in a configured district",
+     "rates": {"2025/26": {"capacity_hkd_per_kwr_month": 146.13, "consumption_hkd_per_kwhr": 0.2546},
+               "2026/27": {"capacity_hkd_per_kwr_month": 147.74, "consumption_hkd_per_kwhr": 0.2480}},
+     "service_area": null}
+  ]
+}

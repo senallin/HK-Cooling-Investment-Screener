@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "parent": "Hong Kong",
+  "districts": [
+    {"id": "kai_tak", "name": "Kai Tak", "kind": "study_area", "status": "official",
+     "description": "Kai Tak Outline Zoning Plan S/K22/9 planning scheme area (Planning Department, published 2026-07-17). Served by the government-run Kai Tak District Cooling System. Not an administrative district: it straddles Kowloon City and Kwun Tong districts.",
+     "definition": {"type": "polygon_file", "file": "config/areas/kai_tak_ozp_S_K22_9_plan_scheme_area.json"}},
+    {"id": "central_western", "name": "Central and Western", "kind": "district",
+     "description": "Dense commercial core (Central, Sheung Wan) with mixed residential on the slopes.",
+     "definition": {"type": "boundary", "file": "raw/boundaries/district_boundary.json", "match": {"field": "District", "values": ["Central and Western District"]}}},
+    {"id": "kwun_tong", "name": "Kwun Tong", "kind": "district",
+     "description": "Industrial-to-commercial transition area (Kowloon East), adjacent to Kai Tak.",
+     "definition": {"type": "boundary", "file": "raw/boundaries/district_boundary.json", "match": {"field": "District", "values": ["Kwun Tong District"]}}},
+    {"id": "sha_tin", "name": "Sha Tin", "kind": "district",
+     "description": "Residential-led new town with large retail podiums.",
+     "definition": {"type": "boundary", "file": "raw/boundaries/district_boundary.json", "match": {"field": "District", "values": ["Sha Tin District"]}}}
+  ]
+}

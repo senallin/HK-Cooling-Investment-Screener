@@ -1,0 +1,4 @@
+{"type":"FeatureCollection","name":"kai_tak_provisional",
+ "crs":{"type":"name","properties":{"name":"urn:ogc:def:crs:EPSG::2326"}},
+ "features":[{"type":"Feature","properties":{"status":"provisional","note":"Rectangle = extent of the 155 clustered buildings in the earlier workbook extract plus 100 m. Placeholder only; replace with the official Kai Tak boundary."},
+ "geometry":{"type":"Polygon","coordinates":[[[837624,818289],[841486,818289],[841486,821466],[837624,821466],[837624,818289]]]}}]}
