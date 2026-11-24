@@ -1,0 +1,7 @@
+raw/
+__pycache__/
+*.pyc
+.venv/
+data/districts/_staging_*/
+data/districts/_rejected/
+data/districts/_archive/
