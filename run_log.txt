@@ -1,0 +1,39 @@
+[18:13:26] prepare_districts v2.0.0; districts: ['kai_tak', 'central_western', 'kwun_tong', 'sha_tin']
+[18:13:26]    area kai_tak            official    bbox E837,583-841,632 N817,818-821,814
+[18:13:26]    area central_western    official    bbox E829,363-835,374 N812,590-817,632
+[18:13:26]    area kwun_tong          official    bbox E838,827-843,347 N815,936-821,767
+[18:13:26]    area sha_tin            official    bbox E832,605-844,256 N822,787-833,288
+[18:13:26] fingerprinting the original files (SHA-256) ...
+[18:13:27] pass 1: streaming the GeoJSON and assigning buildings to areas ...
+[18:13:28]    GeoJSON: 10%
+[18:13:29]    GeoJSON: 20%
+[18:13:30]    GeoJSON: 30%
+[18:13:31]    GeoJSON: 40%
+[18:13:32]    GeoJSON: 50%
+[18:13:33]    GeoJSON: 60%
+[18:13:34]    GeoJSON: 70%
+[18:13:35]    GeoJSON: 80%
+[18:13:36]    GeoJSON: 90%
+[18:13:37]    GeoJSON: 100%
+[18:13:37]    341,153 features scanned; duplicates of Building_ID in GeoJSON: 0
+[18:13:37]    kai_tak: 899 buildings
+[18:13:37]    central_western: 7,076 buildings
+[18:13:37]    kwun_tong: 4,783 buildings
+[18:13:37]    sha_tin: 16,629 buildings
+[18:13:37] pass 2: reading the CSV and collecting the matching rows ...
+[18:13:37]    CSV: 10%
+[18:13:37]    CSV: 20%
+[18:13:38]    CSV: 30%
+[18:13:38]    CSV: 40%
+[18:13:38]    CSV: 50%
+[18:13:38]    CSV: 60%
+[18:13:38]    CSV: 70%
+[18:13:38]    CSV: 80%
+[18:13:38]    CSV: 90%
+[18:13:38]    341,153 CSV rows
+[18:13:39] validating the written packages ...
+[18:13:41] re-fingerprinting the original files (must be unchanged) ...
+[18:13:41]    kai_tak: PASSED -> C:\Users\nadya\Downloads\ccai project\hk-cooling-screener\data\districts\kai_tak
+[18:13:41]    central_western: PASSED -> C:\Users\nadya\Downloads\ccai project\hk-cooling-screener\data\districts\central_western
+[18:13:41]    kwun_tong: PASSED -> C:\Users\nadya\Downloads\ccai project\hk-cooling-screener\data\districts\kwun_tong
+[18:13:41]    sha_tin: PASSED -> C:\Users\nadya\Downloads\ccai project\hk-cooling-screener\data\districts\sha_tin
