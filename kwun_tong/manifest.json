@@ -1,0 +1,160 @@
+{
+ "schema_version": 1,
+ "district": {
+  "id": "kwun_tong",
+  "name": "Kwun Tong",
+  "kind": "district",
+  "status": "official",
+  "parent": "Hong Kong",
+  "description": "Industrial-to-commercial transition area (Kowloon East), adjacent to Kai Tak."
+ },
+ "area_definition": {
+  "type": "boundary",
+  "files": [
+   {
+    "name": "district_boundary.json",
+    "sha256": "ab2123b5a48c2e39e29ce594a0c51590cf6081922ab2c5c14ff78338b788f760"
+   }
+  ],
+  "match_field": "District",
+  "matched_features": 1,
+  "crs_in": "EPSG:4326",
+  "transformed_with": "pyproj (EPSG:4326 -> EPSG:2326)",
+  "area_m2": 13962806.8,
+  "assignment_rule": "footprint area-centroid (EPSG:2326 metres) inside the area polygon; no names or workbooks used"
+ },
+ "crs": "EPSG:2326",
+ "sources": {
+  "geojson": {
+   "name": "HK_UBEM_Buildings_Public_v1_1.geojson",
+   "bytes": 781727720,
+   "sha256": "976463a6cd50d21bb9e9dab86bbd4936b5157e1790478d5c6cc731a7923e62ec"
+  },
+  "csv": {
+   "name": "HK_UBEM_Buildings_Public_v1_1.csv",
+   "bytes": 130327699,
+   "sha256": "88bbe503517922697c52e4d448bfadeb7aa09209a500fad07229fa3dc37ef241"
+  },
+  "licence_note": "HK-BFETD v1.1: CC BY 4.0 according to the Zenodo record cited in the earlier preparation report. Not verified from the files themselves: confirm at the source and credit the dataset authors. Footprint licence for Lands Department derived geometry is unconfirmed.",
+  "features_total": 341153,
+  "csv_rows_total": 341153
+ },
+ "counts": {
+  "buildings": 4783
+ },
+ "summary": {
+  "buildings": 4783,
+  "extent_hk80": [
+   838803.96,
+   816332.14,
+   843119.03,
+   821689.74
+  ],
+  "main_class": {
+   "Residential_住宅类别": 2920,
+   "Commercial_商业类别": 1333,
+   "Mixed-use_混合用途": 435,
+   "Non-assessed_非评估类别": 51,
+   "Industrial_工业类别": 44
+  },
+  "registered_gfa_present": 1,
+  "floors_missing": 0,
+  "footprint_area_total_m2": 3136623.7,
+  "with_building_name": 2507
+ },
+ "files": {
+  "buildings.geojson": {
+   "sha256": "2075e778539cde3e554a1ad2fdccd41dcd4d646b6dcb4467f74cbcb821356489",
+   "bytes": 15201920
+  },
+  "buildings.csv": {
+   "sha256": "97cc75e9f97330ca4436ee2e8a9a6e28e695a4b0ae02a983f11204fbe4e65589",
+   "bytes": 2106529
+  },
+  "boundary.geojson": {
+   "sha256": "8ee2c5ae6e1665cb735a066393f4a1a18efda78afe49eae654478d376d76ed2a",
+   "bytes": 18824
+  }
+ },
+ "validation": {
+  "passed": true,
+  "checks": [
+   {
+    "check": "every GeoJSON feature is byte-identical to its source text",
+    "passed": true,
+    "detail": "4,783 features, 0 differ"
+   },
+   {
+    "check": "GeoJSON Building_IDs unique",
+    "passed": true,
+    "detail": "0 duplicates"
+   },
+   {
+    "check": "rings closed, finite, at least 4 points",
+    "passed": true,
+    "detail": "0 bad"
+   },
+   {
+    "check": "every centroid is inside the area polygon (re-tested from the written file)",
+    "passed": true,
+    "detail": "0 outside"
+   },
+   {
+    "check": "CSV has the same columns, in the same order, as the original",
+    "passed": true,
+    "detail": "30 columns"
+   },
+   {
+    "check": "CSV rows = GeoJSON features, same Building_ID set, no duplicates",
+    "passed": true,
+    "detail": "csv=4,783 geojson=4,783"
+   },
+   {
+    "check": "every source CSV row for these ids was captured exactly once",
+    "passed": true,
+    "detail": "0 ids with 0 or >1 rows"
+   },
+   {
+    "check": "all attributes agree between CSV and GeoJSON for every building (same field names, equal values)",
+    "passed": true,
+    "detail": "no differences"
+   },
+   {
+    "check": "source: GeoJSON feature count equals CSV row count",
+    "passed": true,
+    "detail": "geojson=341,153 csv=341,153"
+   },
+   {
+    "check": "source: Building_ID unique in GeoJSON",
+    "passed": true,
+    "detail": "0 duplicates"
+   },
+   {
+    "check": "source: Building_ID sets identical in both files",
+    "passed": true,
+    "detail": "only-GeoJSON=0 only-CSV=0"
+   },
+   {
+    "check": "source: CSV row count equals unique CSV ids",
+    "passed": true,
+    "detail": "rows=341,153 unique=341,153"
+   },
+   {
+    "check": "ORIGINAL HK_UBEM_Buildings_Public_v1_1.geojson UNCHANGED (SHA-256, size, mtime before = after)",
+    "passed": true,
+    "detail": ""
+   },
+   {
+    "check": "ORIGINAL HK_UBEM_Buildings_Public_v1_1.csv UNCHANGED (SHA-256, size, mtime before = after)",
+    "passed": true,
+    "detail": ""
+   }
+  ]
+ },
+ "generated": {
+  "utc": "2026-11-21T10:13:41Z",
+  "script": "tools/prepare_districts.py",
+  "version": "2.0.0",
+  "python": "3.15.2"
+ }
+}
