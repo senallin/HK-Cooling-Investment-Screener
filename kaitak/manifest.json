@@ -1,0 +1,7 @@
+{
+ "note": "SHA-256 of the unchanged extracts produced by prepare_kaitak_data.py v1.0",
+ "files": {
+  "hk_bfetd_kaitak.csv": "6b006ecddadd4d4fe4c8768e6dad8db520ffb53f1a6a8db683333fa670f62df8",
+  "hk_bfetd_kaitak.geojson": "a2e56a4dd77770b8345a298637eaa1a771c1da80336ee097de9b71b5d4c76dc3"
+ }
+}
