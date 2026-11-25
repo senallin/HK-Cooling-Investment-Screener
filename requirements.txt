@@ -1,4 +1,6 @@
-streamlit>=1.36
+streamlit>=1.50
 plotly>=5.22
 pandas>=2.0
 pyproj>=3.6
+folium>=0.17
+streamlit-folium>=0.24
