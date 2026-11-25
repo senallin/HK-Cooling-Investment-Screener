@@ -9,7 +9,7 @@ import lifecycle as L
 from buildings import EDITABLE
 from model import validate
 from ui import state, inputs
-from ui.style import note, layout, status_label, mhk, yrs, TEAL, OPTION_NAMES, OPTION_COLORS
+from ui.style import note, layout, status_label, mhk, yrs, explain, TEAL, OPTION_NAMES, OPTION_COLORS
 
 LAB = {"gfa_m2": "GFA (m²)", "cooled_fraction": "Cooled share", "load_w_m2": "Peak load (W/m²)", "hours": "Full-load hours/yr", "cop_existing": "Existing COP"}
 
@@ -29,6 +29,7 @@ def single(meta, DD, cl, G, A, EXCL):
     k[4].metric("Cooling density (est.)", f"{a['peak_kw'] / ha:,.0f} kW/ha" if ha > 0.01 else "n/a", help="Peak cooling per hectare of the convex hull of the selected footprints.")
     k[5].metric("Pipe length", f"{A.network_m:,.0f} m", "from selection" if inputs.use_mst() else "typed", delta_color="off",
                 help="Minimum spanning tree between building centres × route factor. A screening proxy that ignores streets and plant location.")
+    explain("cluster", "ⓘ GFA, peak, density, pipe length")
     note("Source data: footprint, storeys, height, type and use shares. <b>Estimates</b>: GFA (footprint × storeys unless registered or overridden), "
          "cooled area, peak load and hours (illustrative use defaults or your values). Nothing here is a measured cooling demand.")
     c1, c2 = st.columns(2)

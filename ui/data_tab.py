@@ -43,6 +43,9 @@ def render(meta, DD, districts):
                  hide_index=True, width="stretch")
     st.caption(f"[{reg['source']['title']}]({reg['source']['url']}), accessed {reg['source']['accessed']}. {reg['source']['notes']}")
     st.caption(next(s for s in reg["systems"] if s["id"] == "kai_tak")["service_area"]["basis"])
+    for s_ in reg["systems"]:
+        rule = s_.get("connection_rule")
+        if rule: note(f"<b>{s_['name']}: connection rule.</b> {rule['text']} Source: <a href='{rule['url']}'>{rule['source']}</a>.")
 
     st.markdown("### Cooling intensity by use (illustrative placeholders)")
     st.caption("Not sourced, not Hong Kong statistics. Mixed buildings use the share-weighted average of their listed uses. Edits apply to every building "
@@ -64,6 +67,11 @@ def render(meta, DD, districts):
         st.success(f"Imported {len(cl)} cluster(s).")
         for p in probs: st.warning(p)
 
+    st.markdown("### Glossary: finance and engineering terms")
+    import glossary as G
+    st.caption("The same explanations open from the ⓘ buttons next to results.")
+    st.dataframe(pd.DataFrame([{"Term": t, "What it is": w, "Why it matters here": y} for t, w, y in G.TERMS.values()]),
+                 hide_index=True, width="stretch")
     st.markdown("### Method and limits")
     st.markdown(METHOD)
     st.markdown("""**Not in the supplied data, so never shown as facts:** registered GFA (11 of the 29,387 prepared buildings), cooling loads, operating hours,

@@ -176,12 +176,15 @@ def live_panel(meta, DD, cl, R, A):
     ss = st.session_state
     if not cl["ids"]:
         html('<div class="card"><div class="eyebrow">Start here</div><h4>Build a cluster</h4><div class="sub">Click buildings on the map, '
-             'draw an area with the ▢ or ⬠ tool, tick them in the table below, or let the tool suggest a group of large, close buildings.</div></div>')
+             'draw an area with the ▢ or ⬠ tool, tick them in the table below, or let the tool suggest a group of large, close buildings.</div>'
+             '<div class="sub" style="margin-top:.45rem"><b>ⓘ buttons</b> next to results explain each finance term (present value, payback, '
+             'capex …) in two sentences. To see how districts differ, open the <b>Compare districts</b> tab.</div></div>')
         if st.button("Suggest a starting cluster", key="suggest_start", type="primary"):
             items = C.suggest_clusters(DD["recs"], DD["idx"], 150, 6, ss.overrides, inputs.global_defaults(), state.table())
             ids = items[0]["ids"] if items else C.starter_cluster(DD["recs"], ss.overrides)
             cl["ids"] = list(ids); ss.focus = ids[0] if ids else None; ss.fit = ("cluster", ss.ver)
-            ss.notice = "Suggested: the largest commercial and mixed-use buildings within 150 m of the biggest one. Edit it freely."
+            ss.notice = ("Suggested: a group of large commercial and mixed-use buildings within 300 m of each other, where no single building "
+                         "carries more than half the cooling demand. Edit it freely.")
             state.bump(); st.rerun()
         return
     ag = C.aggregates([DD["by_id"][i] for i in cl["ids"]], ss.overrides, inputs.global_defaults(), state.table())

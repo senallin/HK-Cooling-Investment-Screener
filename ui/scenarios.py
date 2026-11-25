@@ -7,7 +7,7 @@ import lifecycle as L
 import verdict as V
 from model import validate
 from ui import inputs, state
-from ui.style import html, note, layout, mhk, yrs, OPTION_NAMES, OPTION_COLORS, TEAL, MUTED, SLATE
+from ui.style import html, note, layout, mhk, yrs, explain, OPTION_NAMES, OPTION_COLORS, TEAL, MUTED, SLATE
 
 WHAT = {"Individual": "Each building keeps its chillers and replaces them at end of life (reference case).",
         "CMCS": "One privately built central plant and pipe network shared by the cluster.",
@@ -50,8 +50,13 @@ def render_results(meta, cl, A, EXCL, G, R):
     if n_dcs < len(cl["ids"]): note(f"Only {n_dcs} of {len(cl['ids'])} buildings are inside an existing DCS service area. For the rest, the district "
                                     "cooling result assumes a network could reach them at the selected tariff.", "warn")
     if EXCL: note(f"{len(EXCL)} selected building(s) have missing inputs and are left out. See the Cluster assessment tab.", "warn")
+    reg, _, _ = state.dcs_data()
+    for s_ in reg["systems"]:
+        rule = s_.get("connection_rule")
+        if rule and cov.get(s_["id"]): note(f"<b>{s_['name']}:</b> {rule['text']} <span class='sub'>Source: {rule['source']}.</span>")
     html(f'<div class="verdict">{V.headline(R)}</div>')
     html(cards_html(R))
+    explain("results", "ⓘ What do these numbers mean?")
     st.caption(f"Present values over {R['years']} years at a {A.discount_rate:.1%} real discount rate, including replacements and residual value. "
                "Green dot = best on that row. District cooling emissions include the DCS plant's electricity (attributed). A screening, not a forecast.")
     S = R["scenarios"]; names = [OPTION_NAMES[n] for n in L.SCENARIOS]; r = A.discount_rate
@@ -62,6 +67,7 @@ def render_results(meta, cl, A, EXCL, G, R):
             f.add_bar(x=names, y=[_pv(S[n][comp], r) / 1e6 for n in L.SCENARIOS], name=lab, marker_color=col)
         f.update_layout(barmode="relative", title=f"Lifecycle cost, present value (HK$M, {R['years']} yrs)")
         st.plotly_chart(layout(f, 330, True), width="stretch")
+        explain("charts", "ⓘ Present value, residual value, cash flow")
     with c2:
         f = go.Figure()
         for n in ("CMCS", "DCS"):
@@ -72,6 +78,7 @@ def render_results(meta, cl, A, EXCL, G, R):
     d = S["DCS"]
     st.caption(f"District cooling bill, year 1: contract capacity {d['capacity_kw'] / 1e3:,.2f} MW ({d['capacity_kw'] / 3.517:,.0f} RT) → capacity charge "
                f"{mhk(d['capacity_charge'])} + consumption charge {mhk(d['consumption_charge'])}.")
+    explain("dcs_bill", "ⓘ How the district cooling bill works")
     with st.expander("Detailed table and year-by-year cash flows"):
         t = pd.DataFrame([{"Option": OPTION_NAMES[n], "Investment now (HK$M)": S[n]["capex0"] / 1e6, "Running cost yr 1 (HK$M)": S[n]["opex1"] / 1e6,
                            "Building electricity (GWh/yr)": S[n]["elec_yr"] / 1e6, "Emissions (tCO₂e/yr)": S[n]["co2_t"], "Lifecycle cost PV (HK$M)": S[n]["pv_cost"] / 1e6,
@@ -92,6 +99,7 @@ def render_sensitivity(A):
     sc = s1.selectbox("Option", ["DCS", "CMCS"], format_func=OPTION_NAMES.get, key="s_sc")
     met = s2.selectbox("Result", list(L.METRICS), format_func=L.METRICS.get, key="s_m")
     pct = s3.slider("Move each input by ±%", 5, 50, 20, 5, key="s_pct") / 100
+    explain("sensitivity", "ⓘ How to read this tab")
     fields = [f for f, (_, ap) in L.PARAMS.items() if ap in ("all", sc)]
     base, rows = L.tornado(A, sc, met, pct, fields)
     div = 1e6 if met in ("npv_saving", "pv_cost") else 1; unit = " (HK$M)" if div == 1e6 else ""

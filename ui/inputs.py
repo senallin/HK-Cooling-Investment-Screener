@@ -4,7 +4,7 @@ from dataclasses import replace
 import streamlit as st
 from model import Assumptions
 from ui import state
-from ui.style import html
+from ui.style import html, explain
 
 A0 = Assumptions()
 # field, label, widget, lo, hi, step, format, display scale, group, help
@@ -115,6 +115,7 @@ def panel(have_cluster):
     with st.expander(f"Model inputs · {n_changed} changed from default" if n_changed else "Model inputs (illustrative defaults, except the DCS tariff)"):
         st.caption("Every default is an illustrative placeholder, not a Hong Kong statistic, except the DCS tariff (EMSD). "
                    "Results update as you move a slider. Sliders = values to explore; number boxes = costs to type in.")
+        explain("inputs", "ⓘ Discount rate, COP, diversity …")
         tabs = st.tabs([t for _, t in GROUPS] + ["Screening"])
         for (g, _), tab in zip(GROUPS, tabs):
             with tab:

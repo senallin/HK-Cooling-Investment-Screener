@@ -103,3 +103,12 @@ def layout(fig, h=340, legend=False):
 def mhk(x): return "n/a" if x is None else f"{'−' if x < 0 else ''}HK${abs(x) / 1e6:,.1f}M"
 def yrs(x): return "not within period" if x is None else f"{x:.1f} yrs"
 def num(v, unit=""): return "n/a" if v is None else (f"{v:,.0f}{unit}" if abs(v) >= 100 else f"{v:,.1f}{unit}")
+
+
+def explain(group_or_keys, label="ⓘ What do these terms mean?"):
+    """Small button that opens a panel with plain-language explanations (glossary.py). Accepts a group name or a list of keys."""
+    import glossary as G
+    keys = G.GROUPS.get(group_or_keys, group_or_keys) if isinstance(group_or_keys, str) else group_or_keys
+    with st.popover(label):
+        st.markdown(G.markdown(keys))
+        st.caption("Full glossary: Data and assumptions tab.")
