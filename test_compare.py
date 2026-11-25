@@ -58,4 +58,24 @@ class Glossary(unittest.TestCase):
         self.assertTrue(all(len(v) == 3 and all(v) for v in G.TERMS.values()))
 
 
+class Packages(unittest.TestCase):
+    def test_gzip_package_verifies_and_tampering_is_caught(self):
+        import gzip, json, shutil, tempfile
+        src = Path(__file__).resolve().parent / "data" / "districts" / "kai_tak"
+        if not src.exists(): self.skipTest("needs kai_tak")
+        with tempfile.TemporaryDirectory() as t:
+            pkg = Path(t) / "kai_tak"; shutil.copytree(src, pkg)
+            if (pkg / "buildings.geojson").exists():
+                (pkg / "buildings.geojson.gz").write_bytes(gzip.compress((pkg / "buildings.geojson").read_bytes())); (pkg / "buildings.geojson").unlink()
+            self.assertTrue(D.verify_package(pkg)[0])
+            recs, _ = D.load_district("kai_tak", root=t); self.assertEqual(len(recs), 899)
+            (pkg / "buildings.geojson.gz").write_bytes(gzip.compress(b'{"type":"FeatureCollection","features":[]}'))
+            self.assertFalse(D.verify_package(pkg)[0])
+
+    def test_district_power_company(self):
+        import sources as S
+        self.assertEqual(S.supplier_code("central_western"), "HKE"); self.assertEqual(S.supplier_code("kwun_tong"), "CLP")
+        self.assertTrue(all(k in S.PUBLISHED or k in S.JUDGEMENT for k in ("tariff", "discount_rate", "cop_central")))
+
+
 if __name__ == "__main__": unittest.main()

@@ -1,6 +1,6 @@
 """Application-side access to prepared district packages: data/districts/<id>/{manifest.json,buildings.geojson,buildings.csv}.
 Adding a district = running tools/prepare_districts.py with a new config entry. No application code changes."""
-import csv, hashlib, json, re
+import csv, gzip, hashlib, io, json, re
 from pathlib import Path
 from buildings import BuildingRecord, Val, src
 from geometry import ring_area, ring_centroid
@@ -29,15 +29,25 @@ def parse_mix(s):
     return out if abs(sum(v for _, v in out) - 1) <= 0.02 else ()
 
 
+def read_bytes(pkg, name):
+    """Bytes of a package file. A large file may be stored gzip-compressed as <name>.gz (GitHub's web uploader stops at 25 MB);
+    it is decompressed here, and the fingerprint check below runs on the decompressed bytes, so the integrity guarantee is the same."""
+    p = Path(pkg) / name
+    if p.exists(): return p.read_bytes()
+    gz = Path(pkg) / (name + ".gz")
+    if gz.exists(): return gzip.decompress(gz.read_bytes())
+    raise FileNotFoundError(str(p))
+
+
 def verify_package(pkg):
     """Re-hash the package files against its manifest. Returns (ok, problems)."""
     pkg = Path(pkg); probs = []
     try: man = json.loads((pkg / "manifest.json").read_text(encoding="utf-8"))
     except (OSError, ValueError) as e: return False, [f"manifest unreadable: {e}"]
     for name, meta in man["files"].items():
-        p = pkg / name
-        if not p.exists(): probs.append(f"{name} missing"); continue
-        if p.stat().st_size != meta["bytes"] or hashlib.sha256(p.read_bytes()).hexdigest() != meta["sha256"]:
+        try: b = read_bytes(pkg, name)
+        except FileNotFoundError: probs.append(f"{name} missing"); continue
+        if len(b) != meta["bytes"] or hashlib.sha256(b).hexdigest() != meta["sha256"]:
             probs.append(f"{name} differs from the manifest fingerprint")
     if not man["validation"]["passed"]: probs.append("package did not pass validation when it was built")
     return not probs, probs
@@ -65,8 +75,8 @@ def load_district(district_id, root=None, verify=True):
     if verify:
         ok, probs = verify_package(pkg)
         if not ok: raise DataIntegrityError(f"{district_id}: " + "; ".join(probs))
-    with open(pkg / "buildings.csv", encoding="utf-8", newline="") as fh: rows = {r[ID]: r for r in csv.DictReader(fh)}
-    feats = json.loads((pkg / "buildings.geojson").read_text(encoding="utf-8"))["features"]
+    with io.StringIO(read_bytes(pkg, "buildings.csv").decode("utf-8"), newline="") as fh: rows = {r[ID]: r for r in csv.DictReader(fh)}
+    feats = json.loads(read_bytes(pkg, "buildings.geojson").decode("utf-8"))["features"]
     recs, issues = [], []
     for f in feats:
         gid = str(f["properties"][ID]); row = rows.get(gid)

@@ -29,6 +29,7 @@ class Smoke(unittest.TestCase):
         self.assertTrue(any('class="opts"' in m.value for m in at.markdown))                # option cards
         at.session_state["overrides"] = {ids[0]: {"load_w_m2": 222.0}}; self.go(at)          # an override flows through every tab
         self.assertTrue(any("Your value" in str(df.value.to_dict()) for df in at.dataframe) or True)
+        at.radio(key="in_supplier_mode").set_value("custom"); self.go(at)                   # own tariff instead of the district's power company
         at.slider(key="in_tariff").set_value(2.5); self.go(at)                               # an input change gives an orange chip
         self.assertTrue(any("Electricity tariff: 2.50" in m.value for m in at.markdown))
         at.selectbox(key="district").set_value("kwun_tong"); self.go(at)

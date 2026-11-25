@@ -79,7 +79,9 @@ def evaluate(a):
 
     # ---- CMCS ---------------------------------------------------------------------------------------------
     plant_kw = P * a.diversity
-    net = a.network_m * a.network_cost_m + nb * a.connection_cost
+    # connection per building = max(minimum per building, HK$/kW x that building's peak); flat when connection_cost_kw = 0
+    conn = sum(max(a.connection_cost, getattr(a, "connection_cost_kw", 0.0) * pk) for pk, _, _ in bl)
+    net = a.network_m * a.network_cost_m + conn
     cap = [x + y for x, y in zip(_asset_flows(plant_kw * a.central_capex_kw, 0, a.plant_life, N), _asset_flows(net, 0, a.network_life, N))]
     e = Q / (1 - a.network_loss) / a.cop_central * (1 + a.pump_share)
     elec = [0.0] + [e] * N
@@ -135,7 +137,8 @@ PARAMS = {  # field: (label, applies to)
     "cop_upgrade": ("Replacement COP (Individual)", "Individual"), "cop_central": ("CMCS plant COP", "CMCS"),
     "central_capex_kw": ("CMCS plant cost", "CMCS"), "network_cost_m": ("Pipe cost per metre", "CMCS"),
     "network_m": ("Network length", "CMCS"), "diversity": ("Peak diversity", "CMCS"),
-    "upgrade_capex_kw": ("Chiller replacement cost", "Individual"), "dcs_connection_cost": ("DCS connection cost", "DCS"),
+    "upgrade_capex_kw": ("Chiller replacement cost", "Individual"),
+    "connection_cost_kw": ("Connection cost per kW", "CMCS"), "dcs_connection_cost": ("DCS connection cost", "DCS"),
     "existing_remaining_life": ("Remaining life of existing plant", "all"), "analysis_years": ("Analysis period", "all"),
 }
 METRICS = {"npv_saving": "NPV saving vs Individual (HK$)", "discounted_payback": "Discounted payback (years)",
