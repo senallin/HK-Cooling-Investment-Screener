@@ -50,6 +50,86 @@ def ring_distance(a, b):
                 best = min(best, _pt_seg(p, s0, s1))
     return best
 
+def _radius(r, c): return max(math.hypot(p[0] - c[0], p[1] - c[1]) for p in r)
+
+def check_cluster_fast(rings, max_m=300.0, max_n=1500):
+    """Same result as check_cluster, but prunes pairs with bounds so large clusters stay fast.
+    For a pair with centroid gap d and vertex radii ra, rb: max(0, d-ra-rb) <= edge distance <= d+ra+rb.
+    Only pairs whose bounds straddle the limit, or that could be the widest pair, are measured exactly."""
+    ids = list(rings)
+    if len(ids) > max_n: return dict(n=len(ids), max_distance_m=None, limit_m=max_m, within_limit=None, pairs_over_limit=[], skipped=True)
+    cen = {i: ring_centroid(list(rings[i])) for i in ids}; rad = {i: _radius(rings[i], cen[i]) for i in ids}
+    over, cand, best_lo = [], [], 0.0
+    exact = {}
+    def ex(a, b):
+        k = (a, b)
+        if k not in exact: exact[k] = ring_distance(rings[a], rings[b])
+        return exact[k]
+    for i, a in enumerate(ids):
+        ca, ra = cen[a], rad[a]
+        for b in ids[i + 1:]:
+            d = math.hypot(ca[0] - cen[b][0], ca[1] - cen[b][1]); lo, hi = max(0.0, d - ra - rad[b]), d + ra + rad[b]
+            if lo > max_m: over.append((a, b, None))
+            elif hi > max_m:
+                v = ex(a, b)
+                if v > max_m: over.append((a, b, v))
+            cand.append((hi, lo, a, b)); best_lo = max(best_lo, lo)
+    worst, worst_pair = 0.0, None
+    for hi, lo, a, b in sorted(cand, reverse=True):
+        if hi < max(worst, best_lo): break
+        v = ex(a, b)
+        if v > worst: worst, worst_pair = v, (a, b)
+    n_over = len(over)
+    if n_over > 200:   # list 200 pairs chosen by centroid gap (approximately the widest) plus the widest pair; all measured exactly
+        key = {(a, b): math.hypot(cen[a][0] - cen[b][0], cen[a][1] - cen[b][1]) for a, b, _ in over}
+        keep = sorted(over, key=lambda t: -key[(t[0], t[1])])[:200]
+        if worst_pair and worst > max_m and all((a, b) != worst_pair for a, b, _ in keep): keep[-1] = (*worst_pair, worst)
+        over = keep
+    over = sorted(((a, b, v if v is not None else ex(a, b)) for a, b, v in over), key=lambda t: -t[2])
+    return dict(n=len(ids), max_distance_m=worst, limit_m=max_m, within_limit=not over, pairs_over_limit=over,
+                n_pairs_over_limit=n_over, skipped=False)
+
+def nearest_neighbour_gaps(rings):
+    """Edge-to-edge distance from each building to its nearest other building in the set (isolation check)."""
+    ids = list(rings); cen = {i: ring_centroid(list(rings[i])) for i in ids}; rad = {i: _radius(rings[i], cen[i]) for i in ids}
+    out = {}
+    for a in ids:
+        order = sorted((math.hypot(cen[a][0] - cen[b][0], cen[a][1] - cen[b][1]), b) for b in ids if b != a)
+        best = math.inf
+        for d, b in order:
+            if d - rad[a] - rad[b] > best: break
+            best = min(best, ring_distance(rings[a], rings[b]))
+        out[a] = best if order else None
+    return out
+
+def mst_length(points):
+    """Length (m) of the minimum spanning tree through the points (Prim, O(n^2)). A lower bound for a pipe route."""
+    n = len(points)
+    if n < 2: return 0.0
+    best = [math.inf] * n; used = [False] * n; best[0] = 0.0; total = 0.0
+    for _ in range(n):
+        u = min((i for i in range(n) if not used[i]), key=best.__getitem__); used[u] = True; total += best[u]
+        ux, uy = points[u]
+        for v in range(n):
+            if not used[v]:
+                d = math.hypot(points[v][0] - ux, points[v][1] - uy)
+                if d < best[v]: best[v] = d
+    return total
+
+def convex_hull(points):
+    """Monotone chain. Returns a closed ring (anticlockwise)."""
+    pts = sorted(set(map(tuple, points)))
+    if len(pts) < 3: return pts + pts[:1]
+    lo, up = [], []
+    for p in pts:
+        while len(lo) >= 2 and _cross(lo[-2], lo[-1], p) <= 0: lo.pop()
+        lo.append(p)
+    for p in reversed(pts):
+        while len(up) >= 2 and _cross(up[-2], up[-1], p) <= 0: up.pop()
+        up.append(p)
+    h = lo[:-1] + up[:-1]
+    return h + h[:1]
+
 def check_cluster(rings, max_m=300.0):
     """rings: {id: outer ring}. Returns the largest pairwise edge-to-edge distance and every pair above max_m."""
     ids, over, worst = list(rings), [], 0.0
