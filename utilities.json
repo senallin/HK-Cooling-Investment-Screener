@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "note": "Average net tariff = average over all customer types (basic tariff + fuel charge), January 2026. A commercial bill depends on the customer's tariff type, demand charges and the monthly fuel charge, so this is a screening value. Emission factor = CO2e per kWh of electricity sold, latest reported year.",
+  "suppliers": {
+    "CLP": {"name": "CLP Power Hong Kong", "tariff": 1.406, "emission_factor": 0.34,
+            "tariff_source": "CLP Power, '2026 Tariff Adjustment' press release, 18 Nov 2025: Average Net Tariff 140.6 cents/kWh from 1 Jan 2026",
+            "tariff_url": "https://www.clp.com.hk/content/dam/clp-group/channels/media/document/2025/20251118_en.pdf",
+            "ef_source": "CLP Holdings 2025 Sustainability Report, ESG data hub: CO2e intensity of electricity sold by CLP Power Hong Kong, 2025 = 0.34 kg/kWh",
+            "ef_url": "https://sustainability.clpgroup.com/en/2025/esg-data-hub"},
+    "HKE": {"name": "HK Electric", "tariff": 1.633, "emission_factor": 0.59,
+            "tariff_source": "HK Electric, 'HK Electric Announces 2.2% Tariff Reduction for 2026', 18 Nov 2025: Average Net Tariff 163.3 cents/kWh for January 2026",
+            "tariff_url": "https://www.hkelectric.com/documents/en/MediaResources/PressReleases/Documents/20251118_pre_TR%202026_final_website.pdf",
+            "ef_source": "HK Electric Sustainability Report 2025: carbon intensity 0.59 kg CO2e per unit of electricity sold",
+            "ef_url": "https://www.hkelectric.com/documents/en/CorporateSocialResponsibility/CorporateSocialResponsibility_CDD/Documents/SR2025E.pdf"}
+  },
+  "district_supplier": {"central_western": "HKE", "kai_tak": "CLP", "kwun_tong": "CLP", "sha_tin": "CLP"},
+  "default_supplier": "CLP"
+}
