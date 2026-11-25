@@ -34,27 +34,6 @@ class Assumptions:
     maint_central_plant_kw: float = 100  # central plant, capacity = peak x diversity
     maint_network_pct: float = 0.01    # pipe network + connections, share of their capex per year
     horizon_years: int = 20
-    # ---- lifecycle (lifecycle.py). ILLUSTRATIVE unless a source is named. ----
-    discount_rate: float = 0.04        # real discount rate per year
-    analysis_years: int = 25
-    elec_escalation: float = 0.0       # real change in electricity tariff per year
-    existing_remaining_life: int = 5   # years until today's independent chillers must be replaced
-    equipment_life: int = 20           # life of independent (building) chillers
-    plant_life: int = 25               # life of CMCS central plant equipment
-    network_life: int = 50             # life of CMCS pipes and connections
-    # ---- DCS (government district cooling) ----
-    # Tariff: EMSD "District Cooling Services Charges", Kai Tak DCS rates for 2026/27 (Cap. 624 adjustment formula).
-    dcs_capacity_rate: float = 140.88  # HK$ per kW refrigeration of contract capacity per month (SOURCE: EMSD 2026/27)
-    dcs_consumption_rate: float = 0.2387  # HK$ per kWh refrigeration consumed (SOURCE: EMSD 2026/27)
-    dcs_capacity_escalation: float = 0.0  # real change per year (rate follows Composite CPI, so ~0 in real terms)
-    dcs_contract_factor: float = 1.0   # contract capacity / building peak load
-    dcs_connection_cost: float = 1000000  # HK$ per building: building-side works, heat exchangers / ETS (illustrative)
-    dcs_building_capex_kw: float = 400  # HK$ per kW: secondary-side modification (illustrative)
-    dcs_building_life: int = 30
-    dcs_maint_kw: float = 30           # HK$ per kW per year, building-side equipment (illustrative)
-    dcs_aux_kwh_per_kwh: float = 0.02  # building secondary pumping electricity per kWh cooling (illustrative)
-    dcs_plant_cop: float = 5.5         # DCS plant system COP incl. distribution, for ATTRIBUTED emissions only (illustrative)
-    cmcs_route_factor: float = 1.3     # pipe route length / minimum spanning tree length (illustrative)
 
 def validate(a):
     e = []
@@ -69,13 +48,6 @@ def validate(a):
     if not 0 <= a.network_loss < 0.5: e.append("Network loss must be between 0% and 50%.")
     if not 0 < a.diversity <= 1: e.append("Diversity must be above 0 and at most 1.")
     if a.demand_scale <= 0: e.append("Demand scale must be above 0.")
-    if not -0.05 < a.discount_rate < 0.5: e.append("Discount rate must be between -5% and 50%.")
-    if not 1 <= a.analysis_years <= 60: e.append("Analysis period must be 1 to 60 years.")
-    for f in ("equipment_life", "plant_life", "network_life", "dcs_building_life"):
-        if getattr(a, f) < 1: e.append(f"{f} must be at least 1 year.")
-    if a.existing_remaining_life < 0: e.append("Remaining life of existing plant cannot be negative.")
-    if a.dcs_plant_cop <= 0: e.append("DCS plant COP must be above 0.")
-    if a.dcs_contract_factor <= 0: e.append("DCS contract factor must be above 0.")
     return e
 
 def run(a):
