@@ -9,8 +9,10 @@ Map tiles come from OpenStreetMap, so the browser needs internet access; everyth
 
 ## Streamlit Community Cloud
 1. **Private** GitHub repository (footprint licence unconfirmed). Include everything in this folder except `raw/`
-   (already in `.gitignore`). `data/districts/sha_tin/buildings.geojson` is 38 MB: GitHub's web uploader stops at 25 MB,
-   so push with GitHub Desktop or `git` (limit 100 MB per file), or drop Sha Tin from `config/districts.json` and rebuild.
+   (already in `.gitignore`). Sha Tin's `buildings.geojson` (38 MB) is stored as `buildings.geojson.gz` (5.3 MB) because GitHub's web uploader
+   stops at 25 MB. `districts.read_bytes` decompresses it and the SHA-256 check runs on the decompressed bytes, so integrity is unchanged.
+   Any other large package file can be gzipped the same way. Do not upload `data/districts/index.json` unless every district it lists is uploaded:
+   without it the app lists the packages that are present.
 2. share.streamlit.io › Create app › repository, branch `main`, main file `app.py`; under Advanced settings choose Python 3.12 or 3.13.
 3. Memory: each district is loaded once per server and cached. Sha Tin (16,629 buildings) takes about 4 s the first time.
 

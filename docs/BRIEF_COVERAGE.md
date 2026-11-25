@@ -1,4 +1,4 @@
-# Brief coverage tracker (final, 21 Nov 2026)
+# Brief coverage tracker (updated 25 Nov 2026)
 Status: DONE = implemented and tested here (unit tests and/or headless app test, plus a browser check where noted);
 LIMITED = done with a stated limitation; NOT IN DATA = cannot be sourced from the supplied data.
 
@@ -28,3 +28,10 @@ LIMITED = done with a stated limitation; NOT IN DATA = cannot be sourced from th
 | Tests, deployment doc | DONE | 62 tests; `docs/DEPLOY.md` |
 | Kai Tak OZP zones | DONE (extra) | optional map layer from S/K22/9 ZONE data |
 | Sourced cooling loads, plant age, existing COP | NOT IN DATA | illustrative, labelled assumptions; editable per building |
+| Compare districts (same cluster rule in every district, typical cluster and distribution) | DONE (25 Nov) | Compare districts tab; `compare.py`; Kai Tak kept as the DCS reference case |
+| Plain-language help for finance terms | DONE (25 Nov) | ⓘ buttons on every results view; glossary on the Data tab |
+| Sourced electricity tariff and emission factor | DONE (25 Nov) | by district power company (CLP / HK Electric), `config/utilities.json` |
+| Published vs judgement inputs separated | DONE (25 Nov) | Inputs tab; `sources.py`; `docs/SOURCES.md` |
+| Large district file on GitHub's web uploader | DONE (25 Nov) | gzip-compressed package files, verified after decompression |
+| More districts (18 available) | PLANNED | one `config/districts.json` entry + one preparation run each |
+| Researched cost benchmarks (chillers, pipes, connections, maintenance) | DONE (25 Nov) | `sources.py`, `docs/SOURCES.md`; ⓘ icon with source on every input |

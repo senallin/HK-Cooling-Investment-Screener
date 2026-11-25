@@ -36,7 +36,9 @@ def _pv(series, r): return sum(v / (1 + r) ** t for t, v in enumerate(series))
 
 
 def render_results(meta, cl, A, EXCL, G, R):
-    inputs.panel(len(cl["ids"]) > 1)
+    n_ch = inputs.changed_count()
+    st.caption(("Results use the default inputs. " if not n_ch else f"{n_ch} input(s) changed from default (orange chips). ")
+               + "Change any input on the **Inputs** tab, where published values and judgement calls are kept apart.")
     html(f'<div style="margin:.2rem 0 .5rem">{inputs.chips(A)}</div>')
     if not A.buildings: st.info("Select buildings on the Map and selection tab first."); return
     errs = validate(A)

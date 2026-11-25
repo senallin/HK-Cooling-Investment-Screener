@@ -4,9 +4,10 @@ from dataclasses import replace
 import streamlit as st
 from model import Assumptions
 from ui import state
-from ui.style import html, explain
+from ui.style import html, explain, note
+import sources as SRC
 
-A0 = Assumptions()
+A0 = replace(Assumptions(), **SRC.APP_DEFAULTS)   # app defaults: evidence-based, conservative for shared options (sources.py)
 # field, label, widget, lo, hi, step, format, display scale, group, help
 SPECS = [
     ("demand_scale", "Scale all cooling demand (%)", "slider", 30, 200, 5, "%d", 100, "demand",
@@ -30,7 +31,8 @@ SPECS = [
     ("network_cost_m", "Pipe cost (HK$/m)", "number", 0.0, 200000.0, 500.0, "%.0f", 1, "cmcs", None),
     ("cmcs_route_factor", "Pipe route ÷ straight-line length", "slider", 1.0, 3.0, 0.05, "%.2f", 1, "cmcs",
      "The pipe length is the minimum spanning tree between the selected buildings times this factor."),
-    ("connection_cost", "Connection per building (HK$)", "number", 0.0, 50e6, 50000.0, "%.0f", 1, "cmcs", None),
+    ("connection_cost_kw", "Connection per kW of building peak (HK$/kW)", "number", 0.0, 20000.0, 100.0, "%.0f", 1, "cmcs", None),
+    ("connection_cost", "Connection minimum per building (HK$)", "number", 0.0, 50e6, 50000.0, "%.0f", 1, "cmcs", None),
     ("pump_share", "Pumping energy (% of plant)", "slider", 0, 30, 1, "%d", 100, "cmcs", None),
     ("network_loss", "Distribution loss (%)", "slider", 0, 30, 1, "%d", 100, "cmcs", None),
     ("maint_central_plant_kw", "Plant maintenance (HK$/kW/yr)", "number", 0.0, 5000.0, 10.0, "%.0f", 1, "cmcs", None),
@@ -71,11 +73,19 @@ def dcs_choice():
     return sysopt, sid, yr, rate, cap, use
 
 
-def values():
+def supplier_mode(): return st.session_state.get("in_supplier_mode", "district")
+
+
+def values(did=None):
+    """Model inputs. Electricity tariff and emission factor come from the district's power company (CLP or HK Electric)
+    unless the user chose to set them; `did` defaults to the district open in the sidebar."""
     kw = {}
     for sp in SPECS:
         v = _val(sp) / sp[7] if sp[7] != 1 else _val(sp)
         kw[sp[0]] = int(round(v)) if sp[0] in INTS else float(v)
+    if supplier_mode() == "district":
+        sup = SRC.supplier_for(did or st.session_state.get("district", "kai_tak"))
+        kw.update(tariff=float(sup["tariff"]), emission_factor=float(sup["emission_factor"]))
     _, _, _, _, cap, use = dcs_choice()
     kw.update(dcs_capacity_rate=float(cap), dcs_consumption_rate=float(use))
     return kw
@@ -86,9 +96,14 @@ def use_mst(): return st.session_state.get("in_use_mst", True)
 def global_defaults(): return {"cop_existing": values()["cop_existing"]}
 
 
+def changed_count():
+    return sum(1 for sp in SPECS if (supplier_mode() == "custom" or sp[0] not in ("tariff", "emission_factor"))
+               and abs(float(_val(sp)) - float(_default(sp))) > 1e-9)
+
+
 def assumptions_for(did, ids, stamp=""):
     """(Assumptions, excluded, geometry summary) for any cluster, with the current inputs."""
-    kw = values()
+    kw = values(did)
     recs = [state.district_data(did, stamp)["by_id"][i] for i in ids]
     b, excl = __import__("clusters").to_model(recs, st.session_state.overrides, {"cop_existing": kw["cop_existing"]}, state.table())
     g = state.geo_summary(did, tuple(ids), max_m(), kw["cmcs_route_factor"], stamp) if ids else {"n": 0}
@@ -100,8 +115,12 @@ def chips(A):
     """Every input that differs from its default (orange), plus the sourced tariff and the pipe-length basis."""
     out = []
     for sp in SPECS:
+        if sp[0] in ("tariff", "emission_factor") and supplier_mode() == "district": continue
         if abs(float(_val(sp)) - float(_default(sp))) > 1e-9:
             out.append((f"{sp[1].split(' (')[0]}: {sp[6] % _val(sp)}{' %' if sp[7] == 100 else ''}", "warn"))
+    if supplier_mode() == "district":
+        did = st.session_state.get("district", "kai_tak"); sup = SRC.supplier_for(did)
+        out.append((f"Electricity: {sup['name']} 2026, HK${sup['tariff']:.3f}/kWh, {sup['emission_factor']:.2f} kgCO₂e/kWh (published)", "src"))
     sysopt, sid, yr, rate, cap, use = dcs_choice()
     src = abs(cap - rate["capacity_hkd_per_kwr_month"]) < 1e-9 and abs(use - rate["consumption_hkd_per_kwhr"]) < 1e-9
     out.append((f"DCS tariff: {sysopt[sid]['name'].replace(' District Cooling System', '')} {yr}, HK${cap:g}/kW·month + HK${use:g}/kWh"
@@ -110,38 +129,72 @@ def chips(A):
     return "".join(f'<span class="chip {k}">{t}</span>' for t, k in out)
 
 
+PUBLISHED_FIELDS = ("tariff", "emission_factor", "equipment_life", "plant_life")  # shown in the green card
+
+
+def _widget(sp):
+    f, label, kind, lo, hi, step, fmt, _, _, hlp = sp
+    h = SRC.help_md(f, hlp)                                    # the ⓘ icon: short note + source link (sources.py)
+    if kind == "slider": st.slider(label, lo, hi, _default(sp), step, format=fmt, key=_key(f), help=h)
+    else: st.number_input(label, lo, hi, _default(sp), step, format=fmt, key=_key(f), help=h)
+
+
+def _src_line(f): pass                                         # notes now live behind each input's ⓘ icon
+
+
 def panel(have_cluster):
-    n_changed = sum(1 for sp in SPECS if abs(float(_val(sp)) - float(_default(sp))) > 1e-9)
-    with st.expander(f"Model inputs · {n_changed} changed from default" if n_changed else "Model inputs (illustrative defaults, except the DCS tariff)"):
-        st.caption("Every default is an illustrative placeholder, not a Hong Kong statistic, except the DCS tariff (EMSD). "
-                   "Results update as you move a slider. Sliders = values to explore; number boxes = costs to type in.")
-        explain("inputs", "ⓘ Discount rate, COP, diversity …")
-        tabs = st.tabs([t for _, t in GROUPS] + ["Screening"])
-        for (g, _), tab in zip(GROUPS, tabs):
-            with tab:
-                cols = st.columns(3)
-                for k, sp in enumerate([s for s in SPECS if s[8] == g]):
-                    f, label, kind, lo, hi, step, fmt, _, _, hlp = sp
-                    with cols[k % 3]:
-                        if kind == "slider": st.slider(label, lo, hi, _default(sp), step, format=fmt, key=_key(f), help=hlp)
-                        else: st.number_input(label, lo, hi, _default(sp), step, format=fmt, key=_key(f), help=hlp)
-                if g == "cmcs":
-                    st.checkbox("Use pipe length from the selection (spanning tree × route factor)", value=True, key="in_use_mst",
-                                disabled=not have_cluster)
-                    if not use_mst(): st.number_input("Network length (m)", 0.0, 50000.0, float(A0.network_m), 50.0, format="%.0f", key="in_network_m")
-                if g == "dcs":
-                    sysopt, sid, yr, rate, cap, use = dcs_choice()
-                    c1, c2 = st.columns(2)
-                    c1.selectbox("Tariff of", list(sysopt), format_func=lambda k: sysopt[k]["name"], key="in_dcs_sys")
-                    c2.selectbox("Tariff year", list(sysopt[sid]["rates"]), index=list(sysopt[sid]["rates"]).index(yr), key="in_dcs_year")
-                    c1.number_input("Capacity charge (HK$/kW refrigeration/month)", 0.0, 1000.0, float(rate["capacity_hkd_per_kwr_month"]), 1.0,
-                                    key=f"in_dcs_cap_{sid}_{yr}")
-                    c2.number_input("Consumption charge (HK$/kWh refrigeration)", 0.0, 5.0, float(rate["consumption_hkd_per_kwhr"]), 0.005,
-                                    format="%.4f", key=f"in_dcs_use_{sid}_{yr}")
-                    st.caption(f"Source: EMSD District Cooling Services Charges, {yr}. Rates follow the Cap. 624 adjustment formula.")
-        with tabs[-1]:
-            st.number_input("Distance check: flag buildings further apart than (m)", 50.0, 2000.0, 300.0, 25.0, key="in_max_m",
-                            help="Edge-to-edge distance. A screening flag, never a block.")
-        if st.button("Reset all inputs to defaults", key="reset_inputs"):
-            for k in [k for k in list(st.session_state.keys()) if str(k).startswith("in_")]: del st.session_state[k]
-            st.rerun()
+    """The Inputs tab. Published values (change only with better data) are kept apart from judgement calls (your view of risk)."""
+    by = {sp[0]: sp for sp in SPECS}
+    st.markdown("### Inputs")
+    st.caption("Every number the model uses, in two groups. Changes apply to every tab at once and are listed as orange chips on Compare options.")
+    explain("inputs", "ⓘ Discount rate, COP, diversity …")
+
+    html('<div class="card" style="border-left:4px solid #1F6F4A"><div class="eyebrow" style="color:#1F6F4A">Published values</div>'
+         '<h4>Stated by a utility, EMSD, the Building Energy Code or ASHRAE</h4><div class="sub">Change these only if you have better, '
+         'project-specific data (for example your own electricity bill or a contract quote). The ⓘ icon next to each input links to its source.</div></div>')
+    c1, c2 = st.columns(2)
+    with c1:
+        st.radio("Electricity tariff and grid emissions", ["district", "custom"], key="in_supplier_mode", horizontal=True,
+                 format_func={"district": "Each district's power company (2026)", "custom": "Set my own"}.get,
+                 help="Hong Kong Island: HK Electric. Kowloon and New Territories: CLP. " + SRC.help_md("tariff") + " " + SRC.help_md("emission_factor"))
+        if supplier_mode() == "district":
+            for code, sup in SRC.UTIL["suppliers"].items():
+                st.caption(f"**{sup['name']}**: HK${sup['tariff']:.3f}/kWh ({sup['tariff_source']}); {sup['emission_factor']:.2f} kgCO₂e/kWh ({sup['ef_source']}).")
+        else:
+            _widget(by["tariff"]); _widget(by["emission_factor"])
+            st.caption("Your own values apply to every district.")
+    with c2:
+        sysopt, sid, yr, rate, cap, use = dcs_choice()
+        a, b = st.columns(2)
+        a.selectbox("District cooling tariff of", list(sysopt), format_func=lambda k: sysopt[k]["name"], key="in_dcs_sys")
+        b.selectbox("Tariff year", list(sysopt[sid]["rates"]), index=list(sysopt[sid]["rates"]).index(yr), key="in_dcs_year")
+        a.number_input("Capacity charge (HK$/kW refrigeration/month)", 0.0, 1000.0, float(rate["capacity_hkd_per_kwr_month"]), 1.0, key=f"in_dcs_cap_{sid}_{yr}",
+                       help=SRC.help_md("dcs_tariff"))
+        b.number_input("Consumption charge (HK$/kWh refrigeration)", 0.0, 5.0, float(rate["consumption_hkd_per_kwhr"]), 0.005, format="%.4f", key=f"in_dcs_use_{sid}_{yr}",
+                       help=SRC.help_md("dcs_tariff"))
+        st.caption(f"Source: EMSD, District Cooling Services Charges, {yr} (Cap. 624).")
+    c3, c4 = st.columns(2)
+    with c3: _widget(by["equipment_life"]); _src_line("equipment_life")
+    with c4: _widget(by["plant_life"]); _src_line("plant_life")
+
+    html('<div class="card" style="border-left:4px solid #FF9800;margin-top:1rem"><div class="eyebrow" style="color:#A35F00">Judgement and risk</div>'
+         '<h4>Depend on the project, the owner or a view of the future</h4><div class="sub">No single authoritative Hong Kong figure exists for these. '
+         'The ⓘ icon next to each one gives the benchmark and its source, or the method used. Costs of the shared options are set 1.5× above the '
+         'evidence so that only strong candidates pass; costs of keeping individual plants are not inflated.</div></div>')
+    tabs = st.tabs([t for _, t in GROUPS] + ["Screening"])
+    for (g, _), tab in zip(GROUPS, tabs):
+        with tab:
+            cols = st.columns(3)
+            for k, sp in enumerate([s_ for s_ in SPECS if s_[8] == g and s_[0] not in PUBLISHED_FIELDS]):
+                with cols[k % 3]: _widget(sp); _src_line(sp[0])
+            if g == "cmcs":
+                st.checkbox("Use pipe length from the selection (spanning tree × route factor)", value=True, key="in_use_mst", disabled=not have_cluster)
+                if not use_mst(): st.number_input("Network length (m)", 0.0, 50000.0, float(A0.network_m), 50.0, format="%.0f", key="in_network_m")
+    with tabs[-1]:
+        st.number_input("Distance check: flag buildings further apart than (m)", 50.0, 2000.0, 300.0, 25.0, key="in_max_m",
+                        help=SRC.help_md("max_m", "A screening flag, never a block."))
+    st.caption("Cooling loads, hours and cooled share by building use are judgement too: edit them on the Data and assumptions tab, "
+               "or per building on the building card.")
+    if st.button("Reset all inputs to defaults", key="reset_inputs"):
+        for k in [k for k in list(st.session_state.keys()) if str(k).startswith("in_")]: del st.session_state[k]
+        st.rerun()

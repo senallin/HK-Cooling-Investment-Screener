@@ -60,3 +60,30 @@ Brief to act as senior full-stack developer and product designer and build, test
   map, suggestion, live card and option cards checked in the browser.
 - Judgement calls the user should review: per-use default loads and hours, DCS contract capacity = building peak, DCS plant
   COP for attributed emissions, the OZP boundary as a stand-in for the DCS service area.
+
+## Final day (25 Nov 2026, Claude in a cowork chat, editing the project folder through the desktop app)
+- Usability review against the Option 6 brief and rubric; top-5 list: publish, fix the misleading demo, sourced figures, a district comparison,
+  plain-language help. Hosting: Streamlit Community Cloud from a private GitHub repository with a public app (two separate settings).
+- Glossary: `glossary.py` (26 terms) and ⓘ buttons (`st.popover`) next to every financial result; full table on the Data tab.
+- Demo fix: the suggested cluster was 94% one building (Kai Tak Cruise Terminal, GFA estimated as footprint × storeys). Suggestions now skip
+  groups where one building carries more than half the demand (`clusters.dominant_share`).
+- Kai Tak connection rule added with its LegCo sources: private non-domestic developments must connect to the Kai Tak DCS (land-sale conditions).
+- New Compare districts tab (`compare.py`, `ui/districts_tab.py`): same cluster rule in every district (n buildings, max distance, floor range,
+  types); non-overlapping clusters from seeds in a fixed pseudo-random order; typical cluster = closest to the median saving per MW; box plot and
+  "share of clusters where it pays". Kai Tak excluded by default as the reference case.
+- Bugs found by running it: a district with a missing manifest crashed the tab (now skipped with a warning); one file write landed stale and
+  had to be repeated (sizes are now checked after every write); a 13-column table was transposed to fit.
+- Sha Tin restored: its 38 MB GeoJSON is stored gzipped (5.3 MB) and verified after decompression.
+- Research (web, 25 Nov 2026): CLP and HK Electric 2026 average net tariffs; CLP Power HK 2025 and HK Electric 2025 carbon intensity;
+  Building Energy Code minimum chiller COPs; ASHRAE service lives; EMSD's own statement of 35% / 20% DCS electricity savings (this corrects the
+  earlier note above: the claim IS on EMSD's site; it is used only as a benchmark for the DCS plant COP, not as a result).
+- Power company by district (`config/utilities.json`): Central and Western is HK Electric, the others CLP. Inputs are now split on a new
+  Inputs tab into Published values and Judgement and risk (`sources.py`, `docs/SOURCES.md`).
+- Judgement values still to be chosen by the user are listed in `docs/SOURCES.md`.
+- Cost research (Claude research task, 25 Nov 2026): benchmarks for chiller replacement, pipe network, connection and maintenance
+  (EIA 2023, US DOE, FPL, PolyU 2005 Hong Kong contracts, Audit Commission Report No. 77 Ch. 2, LegCo PWSC papers on Kai Tak 45CG/50CG).
+  The user chose a conservative rule: shared-option costs at 1.5x base, individual-option costs at base. New defaults in `sources.APP_DEFAULTS`;
+  connection cost is now capacity-scaled (HK$/kW with a per-building minimum, `connection_cost_kw` in `lifecycle.py`; the original model is
+  unchanged). Each input on the Inputs tab has an ⓘ icon with a short note and its source link.
+- Effect: with these costs, no matched 6-building cluster pays with a shared plant in any district (it was 4–20% before); even at base
+  (1.0x) only 2% in Central and Western. The connection cost per kW is the largest single driver.

@@ -14,7 +14,7 @@ from model import Assumptions
 from ui import state, inputs
 from ui.style import note, html, layout, explain, OPTION_NAMES, OPTION_COLORS, TEAL, MUTED
 
-A0 = Assumptions()
+A0 = inputs.A0                                   # the app defaults (sources.APP_DEFAULTS)
 CLASS_OPTS = ["Commercial", "Mixed-use", "Residential", "Industrial"]
 
 
@@ -42,7 +42,12 @@ def render(districts):
     ss = st.session_state
     st.markdown("### Compare districts")
     st.caption("Describe the kind of cluster you have in mind. The app looks for clusters like it in every district, with the same rules "
-               "and the same model inputs, so differences come from the districts themselves: how dense they are and what mix of buildings they hold.")
+               "and the same model inputs, so differences come from the districts themselves: how dense they are, what mix of buildings they hold "
+               "and which power company supplies them.")
+    note("<b>Kai Tak is the reference case:</b> district cooling already exists there and connection is mandatory for non-domestic buildings, "
+         "so it is left out of this comparison by default (you can add it). The districts compared are an old business district (Central and Western), "
+         "a former industrial area becoming a business district (Kwun Tong) and a planned 1970s–80s new town (Sha Tin). More districts can be added "
+         "without code changes.")
     with st.form("cmp_form"):
         c1, c2, c3, c4 = st.columns([1, 1.3, 1.5, 1.6])
         n = c1.number_input("Buildings per cluster", 2, 30, 6, 1, help="Every matched cluster has exactly this many buildings.")
@@ -51,7 +56,7 @@ def render(districts):
         floors = c3.slider("Floors", 1, 100, (1, 100), help="Only buildings in this storey range. Low-rise ≈ up to 10, high-rise ≈ 25 or more.")
         classes = c4.multiselect("Building types", CLASS_OPTS, ["Commercial", "Mixed-use"], help="Source building class (HK-BFETD).")
         c5, c6 = st.columns([2, 1])
-        dsel = c5.multiselect("Districts", [d["id"] for d in districts], [d["id"] for d in districts],
+        dsel = c5.multiselect("Districts", [d["id"] for d in districts], [d["id"] for d in districts if d.get("kind") != "study_area"],
                               format_func=lambda i: next(d["name"] for d in districts if d["id"] == i))
         k = c6.slider("Clusters per district (max)", 10, 50, 50, 5, help="Sample size for the pattern chart.")
         go_ = st.form_submit_button("Compare districts", type="primary")
@@ -64,10 +69,11 @@ def render(districts):
         explain("districts", "ⓘ NPV saving, density, distribution"); return
     if not p["classes"] or not p["dids"]: st.warning("Choose at least one building type and one district."); return
 
-    kw_json = json.dumps(inputs.values(), sort_keys=True); ov_json = json.dumps(ss.overrides, sort_keys=True)
+    ov_json = json.dumps(ss.overrides, sort_keys=True)
     by = {d["id"]: d for d in districts}; out = {}; broken = []
     for did in p["dids"]:
-        try: out[did] = _run(did, by[did].get("generated", ""), p["n"], p["max_d"], p["floors"], p["classes"], p["k"], ov_json, state.table_key(), kw_json)
+        try: out[did] = _run(did, by[did].get("generated", ""), p["n"], p["max_d"], p["floors"], p["classes"], p["k"], ov_json, state.table_key(),
+                             json.dumps(inputs.values(did), sort_keys=True))
         except Exception as e:                                   # a missing or altered package must not take the whole tab down
             broken.append(f"{by[did]['name']} ({type(e).__name__})")
     if broken: note("Skipped, because their data package could not be loaded: " + ", ".join(broken) + ". See the Data and assumptions tab.", "warn")
@@ -92,7 +98,10 @@ def render(districts):
          ("Shared plant: NPV saving (HK$M)", lambda o, t: num(t and t["npv_cmcs"] / 1e6)),
          ("District cooling: NPV saving (HK$M)", lambda o, t: num(t and t["npv_dcs"] / 1e6)),
          ("Cheapest option", lambda o, t: OPTION_NAMES[t["best"]] if t else "no match")]
-    tab = pd.DataFrame({by[did]["name"]: [fn(out[did], typ[did]) for _, fn in M] for did in p["dids"]}, index=[m for m, _ in M])
+    import sources as SRC
+    sup = lambda did: (lambda s_: f"{s_['name']} (HK${s_['tariff']:.2f}/kWh, {s_['emission_factor']:.2f} kg/kWh)")(SRC.supplier_for(did))
+    tab = pd.DataFrame({by[did]["name"]: [sup(did)] + [fn(out[did], typ[did]) for _, fn in M] for did in p["dids"]},
+                       index=["Power company (default)"] + [m for m, _ in M])
     st.dataframe(tab, width="stretch", height=36 * (len(tab) + 1) + 4)
     found = {d: t for d, t in typ.items() if t}
     if found:

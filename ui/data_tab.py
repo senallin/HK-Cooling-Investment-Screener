@@ -67,6 +67,15 @@ def render(meta, DD, districts):
         st.success(f"Imported {len(cl)} cluster(s).")
         for p in probs: st.warning(p)
 
+    st.markdown("### Where every input comes from")
+    import sources as SRC
+    st.caption("Published = stated by a utility, EMSD, the Building Energy Code or ASHRAE. Judgement = depends on the project or a view of the future; "
+               "change them on the Inputs tab.")
+    st.dataframe(pd.DataFrame([{"Input": k, "Kind": "Published", "Basis": v[0], "Source": v[1]} for k, v in SRC.PUBLISHED.items()]
+                              + [{"Input": k, "Kind": "Judgement", "Basis": v[0], "Source": v[1]} for k, v in SRC.JUDGEMENT.items()]),
+                 hide_index=True, width="stretch", column_config={"Source": st.column_config.LinkColumn("Source")})
+    st.markdown("### Building features and how each is obtained")
+    st.dataframe(pd.DataFrame(SRC.BUILDING_FEATURES, columns=["Feature", "Status", "Origin"]), hide_index=True, width="stretch")
     st.markdown("### Glossary: finance and engineering terms")
     import glossary as G
     st.caption("The same explanations open from the ⓘ buttons next to results.")
