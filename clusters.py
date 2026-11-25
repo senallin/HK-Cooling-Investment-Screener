@@ -118,10 +118,18 @@ def starter_cluster(records, overrides=None, max_m=300.0, n=12, classes=("Commer
     return [r.building_id for r in near[:n]]
 
 
+def dominant_share(ids, dem):
+    """Share of the group's cooling demand that comes from its single largest building (0 when the group has no demand)."""
+    tot = sum(dem.get(i, 0) for i in ids)
+    return max(dem.get(i, 0) for i in ids) / tot if ids and tot > 0 else 0.0
+
+
 def suggest_clusters(records, index, radius=150.0, min_n=8, overrides=None, global_defaults=None, table=None,
-                     classes=("Commercial", "Mixed-use"), k=5):
+                     classes=("Commercial", "Mixed-use"), k=5, max_share=0.5):
     """Candidate clusters: take the largest-demand building not yet used, group every selectable building of the chosen
     classes whose centroid is within `radius` of it (so members are at most 2 x radius apart), keep groups of >= min_n.
+    Groups where one building carries more than `max_share` of the demand are skipped: their result would describe that one
+    building (often a large low-rise complex whose estimated GFA is least reliable), not a shared-cooling cluster.
     Deterministic. Computed starting points, not existing systems or recommendations."""
     pool = {r.building_id: r for r in records if r.selectable and (not classes or main_class(r) in classes)}
     dem = {i: (building_inputs(r, overrides, global_defaults, table)[2] or 0) for i, r in pool.items()}
@@ -130,7 +138,7 @@ def suggest_clusters(records, index, radius=150.0, min_n=8, overrides=None, glob
         if seed in used: continue
         x, y = pool[seed].centroid_hk80
         grp = sorted((i for i in index.within(x, y, radius) if i in pool and i not in used), key=lambda i: (-dem[i], i))
-        if len(grp) >= min_n:
+        if len(grp) >= min_n and (max_share is None or dominant_share(grp, dem) <= max_share):
             out.append({"ids": grp, "seed": seed, "demand_kwh": sum(dem[i] for i in grp)}); used.update(grp)
             if len(out) >= k: break
     return out
